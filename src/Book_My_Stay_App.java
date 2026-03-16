@@ -85,5 +85,17 @@ class RoomInventory {
 
     public void updateAvailability(String roomType, int count) {
         roomAvailability.put(roomType, count);
+        class RoomSearchService {
+
+            public void searchAvailableRooms(
+                    RoomInventory inventory,
+                    Room singleRoom,
+                    Room doubleRoom,
+                    Room suiteRoom) {
+
+                // Method implementation logic would go here
+
+            }
+        }
     }
 }
