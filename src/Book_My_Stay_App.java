@@ -1,74 +1,112 @@
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
-/**
- * Main allocation logic for the Book_My_Stay_App.
- * This class handles the logic of assigning physical room IDs to reservations.
- */
-public class Book_My_Stay_App {
+// Represents an optional add-on service
+class AddOnService {
+    private String serviceName;
+    private double cost;
 
-    private Set<String> allocatedRoomIds;
-    private Map<String, Set<String>> assignedRoomsByType;
-
-    public Book_My_Stay_App() {
-        this.allocatedRoomIds = new HashSet<>();
-        this.assignedRoomsByType = new HashMap<>();
+    public AddOnService(String serviceName, double cost) {
+        this.serviceName = serviceName;
+        this.cost = cost;
     }
 
-    /**
-     * Confirms a booking request within the Book_My_Stay_App ecosystem.
-     */
-    public void allocateRoom(Reservation reservation, RoomInventory inventory) {
-        String type = reservation.getRoomType();
+    public String getServiceName() {
+        return serviceName;
+    }
 
-        if (inventory.isAvailable(type)) {
-            String roomId = generateRoomId(type);
+    public double getCost() {
+        return cost;
+    }
 
-            allocatedRoomIds.add(roomId);
-            assignedRoomsByType.computeIfAbsent(type, k -> new HashSet<>()).add(roomId);
+    @Override
+    public String toString() {
+        return serviceName + " (₹" + cost + ")";
+    }
+}
 
-            reservation.setRoomId(roomId);
-            inventory.decrementInventory(type);
+// Manages mapping between reservation IDs and services
+class AddOnServiceManager {
 
-            System.out.println("[Book_My_Stay_App] Success: Room " + roomId + " assigned.");
-        } else {
-            System.out.println("[Book_My_Stay_App] Error: No " + type + " rooms available.");
+    // Map<ReservationID, List of Services>
+    private Map<String, List<AddOnService>> reservationServicesMap = new HashMap<>();
+
+    // Add a service to a reservation
+    public void addService(String reservationId, AddOnService service) {
+        reservationServicesMap
+                .computeIfAbsent(reservationId, k -> new ArrayList<>())
+                .add(service);
+    }
+
+    // Get all services for a reservation
+    public List<AddOnService> getServices(String reservationId) {
+        return reservationServicesMap.getOrDefault(reservationId, new ArrayList<>());
+    }
+
+    // Calculate total cost of services
+    public double calculateTotalServiceCost(String reservationId) {
+        List<AddOnService> services = getServices(reservationId);
+        double total = 0;
+
+        for (AddOnService service : services) {
+            total += service.getCost();
+        }
+
+        return total;
+    }
+
+    // Display services
+    public void displayServices(String reservationId) {
+        List<AddOnService> services = getServices(reservationId);
+
+        if (services.isEmpty()) {
+            System.out.println("No add-on services selected.");
+            return;
+        }
+
+        System.out.println("Selected Add-On Services:");
+        for (AddOnService service : services) {
+            System.out.println("- " + service);
         }
     }
-
-    private String generateRoomId(String roomType) {
-        String newId;
-        Random rand = new Random();
-        do {
-            // Generates ID like "D101" for Deluxe or "S502" for Suite
-            newId = roomType.substring(0, 1).toUpperCase() + (101 + rand.nextInt(899));
-        } while (allocatedRoomIds.contains(newId));
-
-        return newId;
-    }
 }
 
-// --- Supporting Classes to make the code functional ---
+// Main class (Use Case execution)
+public class Book_My_Stay_App {
 
-class Reservation {
-    private String roomType;
-    private String roomId;
+    public static void main(String[] args) {
 
-    public Reservation(String roomType) { this.roomType = roomType; }
-    public String getRoomType() { return roomType; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-    public String getRoomId() { return roomId; }
-}
+        // Simulated existing reservation (core booking untouched)
+        String reservationId = "RES123";
 
-class RoomInventory {
-    private Map<String, Integer> stock = new HashMap<>();
+        // Create service manager
+        AddOnServiceManager serviceManager = getAddOnServiceManager(reservationId);
 
-    public void addStock(String type, int count) { stock.put(type, count); }
+        // Display selected services
+        System.out.println("Reservation ID: " + reservationId);
+        serviceManager.displayServices(reservationId);
 
-    public boolean isAvailable(String type) {
-        return stock.getOrDefault(type, 0) > 0;
+        // Calculate additional cost
+        double totalCost = serviceManager.calculateTotalServiceCost(reservationId);
+        System.out.println("Total Add-On Cost: ₹" + totalCost);
+
+        // Core booking remains unchanged (demonstration)
+        System.out.println("\nNote: Core booking and inventory remain unaffected.");
     }
 
-    public void decrementInventory(String type) {
-        stock.put(type, stock.get(type) - 1);
+    private static @NotNull AddOnServiceManager getAddOnServiceManager(String reservationId) {
+        AddOnServiceManager serviceManager = new AddOnServiceManager();
+
+        // Guest selects add-on services
+        AddOnService breakfast = new AddOnService("Breakfast", 500);
+        AddOnService airportPickup = new AddOnService("Airport Pickup", 1200);
+        AddOnService spa = new AddOnService("Spa Access", 2000);
+
+        // Add services to reservation
+        serviceManager.addService(reservationId, breakfast);
+        serviceManager.addService(reservationId, airportPickup);
+        serviceManager.addService(reservationId, spa);
+        return serviceManager;
     }
 }
